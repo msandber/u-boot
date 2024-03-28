@@ -79,6 +79,11 @@ config MT7621_BOOT_FROM_NAND
 choice
 	prompt "Board select"
 
+config BOARD_MT7621_GENEXIS_EX400
+	bool "Genexis Pulse EX400"
+	help
+	  Genexis Pulse EX400 board.
+
 config BOARD_MT7621_RFB
 	bool "MediaTek MT7621 RFB (SPI-NOR)"
 	help
@@ -112,3 +117,5 @@ config SYS_VENDOR
 	default "mediatek" if BOARD_MT7621_RFB || BOARD_MT7621_NAND_RFB
 
 endif
+
+source "board/genexis/ex400/Kconfig"

@@ -1,0 +1,11 @@
+if BOARD_MT7621_GENEXIS_EX400
+
+config SYS_CONFIG_NAME
+	default "mt7621_genexis_pulse-ex400"
+
+endif
+
+#    Define CONFIG_SYS_CPU=”cpu” to compile arch/<arch>/cpu/<cpu>
+#    Define CONFIG_SYS_SOC=”soc” to compile arch/<arch>/cpu/<cpu>/<soc>
+#    Define CONFIG_SYS_VENDOR=”vendor” to compile board/<vendor>/common/* and board/<vendor>/<board>/*
+#    Define CONFIG_SYS_BOARD=”board” to compile board/<board>/* (or board/<vendor>/<board>/* if CONFIG_SYS_VENDOR is defined) Define CONFIG_SYS_CONFIG_NAME=”target” to include include/configs/<target>.h
