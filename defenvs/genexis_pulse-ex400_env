@@ -1,0 +1,15 @@
+_init_env=setenv bootcmd $bootcmd_d; setenv bootcmd_d; setenv _init_env; saveenv;
+boot_production=led $bootled_pwr on ; run ubi_read_production && bootm $loadaddr - $fdtaddr; led $bootled_pwr off
+boot_ubi=ubi part ubi && run boot_production
+bootcmd=run _init_env; run boot_ubi
+bootcmd_d=run boot_ubi
+bootdelay=3
+bootled_pwr=red:status
+fdtaddr=0x84000000
+file_uboot=u-boot-mt7621.bin
+ipaddr=192.168.1.1
+loadaddr=0x83000000
+root_vol=rootfs_0
+serverip=192.168.1.254
+ubi_read_production=ubifsmount ubi0:rootfs_0 && ubifsload $loadaddr /boot/uImage && ubifsload $fdtaddr /boot/dtb
+upgrade_uboot=tftpboot $file_uboot && nand erase.part u-boot && nand write $loadaddr u-boot $filesize
