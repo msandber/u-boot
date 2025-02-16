@@ -16,6 +16,11 @@
 #include <linux/bitfield.h>
 #include "mt7621_nand.h"
 
+#ifndef CONFIG_SPL_BUILD
+#include <dm.h>
+#include <dm/device_compat.h>
+#endif
+
 /* NFI core registers */
 #define NFI_CNFG			0x000
 #define   CNFG_OP_MODE			GENMASK(14, 12)
@@ -180,8 +185,6 @@
 /* Register base */
 #define NFI_BASE			0x1e003000
 #define NFI_ECC_BASE			0x1e003800
-
-static struct mt7621_nfc nfc_dev;
 
 static const u16 mt7621_nfi_page_size[] = { SZ_512, SZ_2K, SZ_4K };
 static const u8 mt7621_nfi_spare_size[] = { 16, 26, 27, 28 };
@@ -1133,6 +1136,10 @@ static void mt7621_nfc_init_chip(struct mt7621_nfc *nfc)
 	nand->block_bad = mt7621_nfc_block_bad;
 
 	mtd = nand_to_mtd(nand);
+
+#ifndef CONFIG_SPL_BUILD
+	mtd->dev = nfc->dev;
+#endif
 	mtd_set_ooblayout(mtd, &mt7621_nfc_ooblayout_ops);
 
 	/* Reset NFI master */
@@ -1197,8 +1204,111 @@ int mt7621_nfc_spl_post_init(struct mt7621_nfc *nfc)
 	return mt7621_nfc_attach_chip(nand);
 }
 
+#ifndef CONFIG_SPL_BUILD
+static void mt7621_nfc_init_chip_of(struct udevice *dev)
+{
+	struct mt7621_nfc *priv = dev_get_priv(dev);
+
+	mt7621_nfc_init_chip(priv);
+}
+
+/* Probe function: Initializes the NAND controller */
+static int mt7621_nfc_probe(struct udevice *dev)
+{
+	struct mt7621_nfc *priv = dev_get_priv(dev);
+	fdt_size_t size;
+	int ret;
+	fdt_addr_t addr = dev_read_addr_size_name(dev, "nfi", &size);
+
+	if (addr == FDT_ADDR_T_NONE) {
+		dev_err(dev, "Failed to get NFI address from DT\n");
+		return -EINVAL;
+	}
+
+	priv->nfi_regs = ioremap(addr, size);  // Map NAND controller registers
+
+	if (!priv->nfi_regs) {
+		dev_err(dev, "Out of memory\n");
+		ret = -ENOMEM;
+		goto error;
+	}
+
+	addr = dev_read_addr_size_name(dev, "ecc", &size);
+
+	if (addr == FDT_ADDR_T_NONE) {
+		dev_err(dev, "Failed to get ECC address from DT\n");
+		ret = -EINVAL;
+		goto clean_nfi;
+	}
+
+	priv->ecc_regs = ioremap(addr, size);  // Map ECC controller registers
+
+	if (!priv->ecc_regs) {
+		dev_err(dev, "Out of memory\n");
+		ret = -ENOMEM;
+		goto clean_nfi;
+	}
+
+	priv->dev = dev;
+
+	/* Additional NAND setup */
+	mt7621_nfc_init_chip_of(dev);
+
+	return 0;
+
+clean_nfi:
+	iounmap(priv->nfi_regs);
+error:
+	return ret;
+}
+
+/* Remove function: Cleanup resources */
+static int mt7621_nfc_remove(struct udevice *dev)
+{
+    struct mt7621_nfc *priv = dev_get_priv(dev);
+
+    if (priv->nfi_regs)
+        iounmap(priv->nfi_regs);
+
+    if (priv->ecc_regs)
+        iounmap(priv->ecc_regs);
+
+    return 0;
+}
+
+/* Device Tree match table */
+static const struct udevice_id mt7621_nfc_ids[] = {
+    { .compatible = "mediatek,mt7621-nfc" },
+    { }
+};
+
+/* Driver structure */
+U_BOOT_DRIVER(mt7621_nand) = {
+    .name = "mt7621_nand",
+    .id = UCLASS_MTD,
+    .of_match = mt7621_nfc_ids,
+    .probe = mt7621_nfc_probe,
+    .remove = mt7621_nfc_remove,
+    .priv_auto = sizeof(struct mt7621_nfc),
+};
+
+#endif // CONFIG_SPL_BUILD
+
 void board_nand_init(void)
 {
+#ifndef CONFIG_SPL_BUILD
+	struct udevice *dev;
+	int ret;
+
+	ret = uclass_get_device_by_driver(UCLASS_MTD,
+					  DM_DRIVER_GET(mt7621_nand),
+					  &dev);
+	if (ret && ret != -ENODEV)
+		pr_err("Failed to initialize MT7621 NAND flash controller. (error %d)\n", ret);
+#else
+	extern struct mt7621_nfc nfc_dev;
+
 	mt7621_nfc_set_regs(&nfc_dev);
 	mt7621_nfc_init_chip(&nfc_dev);
+#endif // CONFIG_SPL_BUILD
 }

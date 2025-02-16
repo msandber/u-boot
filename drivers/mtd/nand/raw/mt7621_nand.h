@@ -20,6 +20,9 @@ struct mt7621_nfc {
 	void __iomem *ecc_regs;
 
 	u32 spare_per_sector;
+#ifndef CONFIG_SPL_BUILD
+	struct udevice *dev;
+#endif
 };
 
 /* for SPL */
