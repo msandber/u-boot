@@ -241,6 +241,15 @@
 		status = "disabled";
 	};
 
+	nand: nand@1e003000 {
+		compatible = "mediatek,mt7621-nfc";
+		reg = <0x1e003000 0x800
+		       0x1e003800 0x800>;
+		reg-names = "nfi", "ecc";
+
+		status = "disabled";
+	};
+
 	eth: eth@1e100000 {
 		compatible = "mediatek,mt7621-eth";
 		reg = <0x1e100000 0x20000>;
