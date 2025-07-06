@@ -4,5 +4,7 @@
 
 #include "mt7621.h"
 
+#define CONFIG_SYS_NAND_BLOCK_SIZE	0x20000
+#define CONFIG_SYS_NAND_PAGE_SIZE	2048
 
 #endif
