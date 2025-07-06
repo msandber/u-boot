@@ -185,6 +185,59 @@ int nand_spl_load_image(uint32_t offs, unsigned int size, void *dest)
 
 	return 0;
 }
+/**
+ * nand_spl_read_block - Read data from physical eraseblock into a buffer
+ * @block:	Number of the physical eraseblock
+ * @offset:	Data offset from the start of @peb
+ * @len:	Data size to read
+ * @dst:	Address of the destination buffer
+ *
+ */
+
+int nand_spl_read_block(int block, int offset, int len, void *dest)
+{
+	struct mt7621_nfc *nfc = &nfc_dev;
+	struct nand_chip *chip = &nfc->nand;
+	struct mtd_info *mtd = &chip->mtd;
+	uint32_t pages_per_block = mtd->erasesize / mtd->writesize;
+	uint32_t page_base = pages_per_block * block;
+	uint32_t page, read;
+
+	if (!nand_valid)
+		return -ENODEV;
+
+	/* Calculate the page number */
+	page = offset / mtd->writesize;
+	page += page_base;
+
+	/* Offset to the start of a flash page */
+	offset = offset % mtd->writesize;
+
+	while (len) {
+		/*
+		 * Non page aligned reads go to the scratch buffer.
+		 * Page aligned reads go directly to the destination.
+		 */
+		read = min(len, (int) (mtd->writesize - offset));
+		if (offset || len < mtd->writesize) {
+			if (nfc_read_page_hwecc(mtd, buffer, page))
+				return -1;
+
+			memcpy(dest, buffer + offset, read);
+			offset = 0;
+		} else {
+			if (nfc_read_page_hwecc(mtd, dest, page))
+				return -1;
+		}
+
+		page++;
+		len -= read;
+		dest += read;
+	}
+
+	return 0;
+}
+
 
 int nand_default_bbt(struct mtd_info *mtd)
 {
