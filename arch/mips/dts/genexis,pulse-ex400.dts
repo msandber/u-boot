@@ -16,6 +16,7 @@
 
 	aliases {
 		ethernet0 = &eth;
+		nand0 = &nand;
 		serial0 = &uart0;
 	};
 
@@ -53,6 +54,26 @@
 		u-boot {
 			activity-led = <&led_status_green>;
 			boot-led = <&led_status_red>;
+		};
+	};
+};
+
+&nand {
+	status = "okay";
+
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		partition@0 {
+			reg = <0x00 0x100000>;
+			label = "uboot";
+		};
+
+		partition@100000 {
+			reg = <0x100000 0xff00000>;
+			label = "ubi";
 		};
 	};
 };
