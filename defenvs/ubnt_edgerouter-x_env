@@ -1,0 +1,12 @@
+boot_nand=nboot kernel && bootm
+bootcmd=run boot_nand
+bootcmd_d=run boot_nand
+bootdelay=3
+ethaddr_factory=
+file_uboot=u-boot-mt7621.bin
+ipaddr=192.168.1.1
+loadaddr=0x83000000
+mtdids=nand0=MT7621-NAND
+mtdparts=mtdparts=MT7621-NAND:512k(u-boot),384k(u-boot-env),384k(factory),6M(kernel),-(ubi)
+serverip=192.168.1.254
+upgrade_uboot=tftpboot $file_uboot && nand erase.part u-boot && nand write $loadaddr u-boot $filesize
