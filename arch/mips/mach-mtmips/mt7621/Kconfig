@@ -103,6 +103,7 @@ endchoice
 
 config SYS_CONFIG_NAME
 	default "mt7621" if  BOARD_MT7621_RFB || BOARD_MT7621_NAND_RFB
+	default "mt7621" if  BOARD_MT7621_UBNT_EDGEROUTER_X
 
 config SYS_BOARD
 	string "Board name"
